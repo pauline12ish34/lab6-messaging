@@ -48,9 +48,6 @@ flutter run
 - Received notifications are shown in a list and as a popup dialog.
 - Notification history is saved locally and persists across app restarts.
 
-## Screenshots
-(Add your screenshots here: app UI, notification popup, Firebase Console, etc.)
-
 ## Project Structure
 ```
 lib/
