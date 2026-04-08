@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'services/notification_service.dart';
+import 'models/notification_model.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'models/notification_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,12 +33,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _deviceToken = 'Fetching token...';
-  final List<Map<String, String>> _messages = [];
+  List<NotificationModel> _messages = [];
+  late Box<NotificationModel> _notificationBox;
 
   @override
   void initState() {
     super.initState();
-    _initNotifications();
+    _initHiveAndNotifications();
+  }
+
+  Future<void> _initHiveAndNotifications() async {
+    _notificationBox = Hive.box<NotificationModel>('notifications');
+    // Load saved notifications
+    setState(() {
+      _messages = _notificationBox.values.toList().reversed.toList();
+    });
+    await _initNotifications();
   }
 
   Future<void> _initNotifications() async {
@@ -54,12 +68,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _addMessage(RemoteMessage message) {
+    final notification = NotificationModel(
+      title: message.notification?.title ?? 'No Title',
+      body: message.notification?.body ?? 'No Body',
+      time: DateTime.now().toString().substring(0, 19),
+    );
+    _notificationBox.add(notification);
     setState(() {
-      _messages.insert(0, {
-        'title': message.notification?.title ?? 'No Title',
-        'body': message.notification?.body ?? 'No Body',
-        'time': DateTime.now().toString().substring(0, 19),
-      });
+      _messages.insert(0, notification);
     });
   }
 
@@ -150,14 +166,14 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Icon(Icons.notifications,
                                   color: Colors.white, size: 20),
                             ),
-                            title: Text(msg['title'] ?? '',
+                            title: Text(msg.title,
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold)),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(msg['body'] ?? ''),
-                                Text(msg['time'] ?? '',
+                                Text(msg.body),
+                                Text(msg.time,
                                     style: const TextStyle(
                                         fontSize: 11, color: Colors.grey)),
                               ],
